@@ -9,58 +9,64 @@
 import UIKit
 
 class AppStoreViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
-
+    
     private let cellID = "celId"
     private let largeCellID = "largeCellID"
     private let headerID = "headerID"
     
     var featuredApps: FeaturedApps?
     var appCategories: [CategoryModels]?
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        CategoryModels.fetchMyAppCategory { (featuredApps) in
-            self.featuredApps = featuredApps
-            // to ensure to get back the json data, and update it
-            self.appCategories = featuredApps.appCategories
-            self.collectionView?.reloadData()
+        fetchMyAppCategory { (featuredApps) in
+            
+            DispatchQueue.main.async {
+                self.featuredApps = featuredApps
+                
+                // to ensure to get back the json data, and update it
+                self.appCategories = featuredApps.categories
+                
+                self.collectionView?.reloadData()
+            }
+            
         }
-//        appCategories = CategoryModels.sampleAppCategory()
-
+        
         navigationItem.title = "Featured"
         
         collectionView?.backgroundColor = .white
         collectionView?.register(CategoryCell.self, forCellWithReuseIdentifier: cellID)
         collectionView?.register(LargeCategoryCell.self, forCellWithReuseIdentifier: largeCellID)
-        collectionView?.register(Header.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerID)
+        collectionView?.register(Header.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: headerID)
     }
     
-   
-    // to build it as Struct 
-    /*
-    let app: [CollectionApp] = {
-        let apps = Apps(name: "Frozen App", category: "Entertainment", price: 3.99, image: #imageLiteral(resourceName: "frozen"))
-        let collecApp = CollectionApp(name: "Best New Apps", apps: [apps])
-        
-        let gameApp = Apps(name: "Telepaint", category: "Games", price: 2.99, image: #imageLiteral(resourceName: "telepaint"))
-        let angryGameApp = Apps(name: "Angry Birds", category: "Games", price: NSNumber(), image: #imageLiteral(resourceName: "angrybirdsspace"))
-        
-        let collecGame = CollectionApp(name: "Best New Games", apps: [gameApp, angryGameApp])
-        return [collecApp, collecGame]
-    }()
-    */
+    func fetchMyAppCategory(completionHandler:@escaping (FeaturedApps)->()) {
+        let urlString = "https://api.letsbuildthatapp.com/appstore/featured"
+        guard let url = URL(string: urlString) else { return }
+        URLSession.shared.dataTask(with: url) { (data, response, error) in
+            if error != nil {
+                print(error!)
+            }
+            guard let data = data else { return }
+            do {
+                
+                let decoder = JSONDecoder()
+                let featuredApp = try decoder.decode(FeaturedApps.self, from: data)
+                completionHandler(featuredApp)
+                
+            } catch let err {
+                print(err)
+            }
+            }.resume()
+    }
+    
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-
-        //return app.count
         
         if let count = appCategories?.count {
             return count
         } else {
             return 0
         }
-      //  return 0
-//          return (appCategories?.count)!
     }
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         if indexPath.item == 2 {
@@ -70,8 +76,7 @@ class AppStoreViewController: UICollectionViewController, UICollectionViewDelega
             return cell
         }
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellID, for: indexPath) as! CategoryCell
-     //   cell.appCategory = app[indexPath.item]
-      cell.appCategory = featuredApps?.appCategories?[indexPath.item]
+        cell.appCategory = featuredApps?.categories?[indexPath.item]
         cell.appStoreController = self
         return cell
     }
@@ -104,42 +109,51 @@ class AppStoreViewController: UICollectionViewController, UICollectionViewDelega
     }
 }
 
+
 class Header: CategoryCell {
-    var leftAnchorImageView: NSLayoutConstraint?
     
+    var leftAnchorImageView: NSLayoutConstraint?
+    var scrollingTimer = Timer()
     override func setupViews() {
         // comment super.setupViews(): to remove nameLabel, dividedLine
-//        super.setupViews()
+        //        super.setupViews()
         appsCollectionView.register(BannerCell.self, forCellWithReuseIdentifier: bannerCellId)
         
         appsCollectionView.dataSource = self
         appsCollectionView.delegate = self
         appsCollectionView.isPagingEnabled = true
         addSubview(appsCollectionView)
-        /*
-        appsCollectionView.leftAnchor.constraint(equalTo: self.leftAnchor).isActive = true
-        appsCollectionView.rightAnchor.constraint(equalTo: self.rightAnchor).isActive = true
-        
-        appsCollectionView.widthAnchor.constraint(equalToConstant: 375).isActive = true
-        appsCollectionView.bottomAnchor.constraint(equalTo: self.bottomAnchor, constant: 4).isActive = true
-        appsCollectionView.heightAnchor.constraint(equalToConstant: 120).isActive = true
-        UIView.animate(withDuration: 2.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
-            self.appsCollectionView.leftAnchor.constraint(equalTo: self.rightAnchor, constant: 0).isActive = true
-        }, completion: nil)*/
         
         leftAnchorImageView = appsCollectionView.leftAnchor.constraint(equalTo: self.leftAnchor)
-            leftAnchorImageView?.isActive = true
+        leftAnchorImageView?.isActive = true
         
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[v0]|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0":appsCollectionView]))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[v0]|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0":appsCollectionView]))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[v0]|", options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: ["v0":appsCollectionView]))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[v0]|", options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: ["v0":appsCollectionView]))
     }
     
     let bannerCellId = "bannerCellID"
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: bannerCellId, for: indexPath) as! BannerCell
-        cell.app = appCategory?.appss?[indexPath.row]
+        cell.app = appCategory?.apps?[indexPath.row]
+        
+        var itemIndex = indexPath.item
+        if let numOfImages = appCategory?.apps?.count {
+            if itemIndex < (numOfImages - 1) {
+                itemIndex += 1
+            } else {
+                itemIndex = 0
+            }
+        }
+        
+        delay(5) {
+            let indexPath = IndexPath(item: itemIndex, section: 0)
+            self.appsCollectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: false)
+            self.appsCollectionView.reloadData()
+        }
+        
         return cell
     }
+    
     override func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
     }
@@ -151,22 +165,26 @@ class Header: CategoryCell {
         return 0
     }
     
+    func delay(_ delay: Double, closure: @escaping()->()) {
+        let time = DispatchTime.now() + ((delay * Double(NSEC_PER_SEC)) / Double(NSEC_PER_SEC))
+        DispatchQueue.main.asyncAfter(deadline: time, execute: closure)
+    }
+    
     class BannerCell: AppCell {
-       // var rightAnchorSide: NSLayoutConstraint?
         override func setupViews() {
             
             imageView.layer.cornerRadius = 0
             imageView.contentMode = .scaleToFill
-        
+            
             addSubview(imageView)
             imageView.translatesAutoresizingMaskIntoConstraints = false
-           
-           addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[v0]|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0":imageView]))
-            addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[v0]|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0":imageView]))
- 
+            
+            addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[v0]|", options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: ["v0":imageView]))
+            addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[v0]|", options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: ["v0":imageView]))
+            
         }
     }
-
+    
 }
 
 class LargeCategoryCell: CategoryCell {
@@ -179,9 +197,9 @@ class LargeCategoryCell: CategoryCell {
         super.setupViews()
         appsCollectionView.register(LargeAppCell.self, forCellWithReuseIdentifier: largeAppCell)
     }
-   override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: largeAppCell, for: indexPath) as! LargeAppCell
-        cell.app = appCategory?.appss?[indexPath.row]
+        cell.app = appCategory?.apps?[indexPath.row]
         return cell
     }
     
@@ -194,47 +212,11 @@ class LargeCategoryCell: CategoryCell {
             addSubview(imageView)
             imageView.translatesAutoresizingMaskIntoConstraints = false
             // to expand imageView, and appsCollectionView contains only imageView
-            addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[v0]|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0":imageView]))
-            addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|-4-[v0]-12-|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0":imageView]))
+            addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[v0]|", options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: ["v0":imageView]))
+            addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|-4-[v0]-12-|", options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: ["v0":imageView]))
         }
     }
 }
-
-
-
-
-
-/*
-class LargeCategoryCell: CategoryCell {
- 
-    let largeAppCell = "largeAppCell"
- 
-    override func setupViews() {
-        super.setupViews()
-        appsCollectionView.register(LargeAppCell.self, forCellWithReuseIdentifier: largeAppCell)
-    }
-    override func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: 200, height: frame.height - 32)
-        
-    }
-    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: largeAppCell, for: indexPath) as! AppCell
-        cell.app = appCategory?.apps?[indexPath.item]
-        return cell
-    }
-    class LargeAppCell: AppCell {
-        
-        override func setupViews() {
-            addSubview(imageView)
-            imageView.translatesAutoresizingMaskIntoConstraints = false
-            addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[v0]|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0": imageView]))
-            
-            addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|-4-[v0]-12-|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0": imageView]))
-        }
-    }
-}
-*/
-
 
 
 

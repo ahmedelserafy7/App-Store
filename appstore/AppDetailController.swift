@@ -17,23 +17,22 @@ class AppDetailController: UICollectionViewController, UICollectionViewDelegateF
             
             // to avoid repetition(same infinte loop) when you click step into, and return value if it has
             
-            if app?.screenshots != nil {
+            if app?.Screenshots != nil {
                 return
             }
-            if let id = app?.id {
+            if let id = app?.Id {
                 let urlString = "https://api.letsbuildthatapp.com/appstore/appdetail?id=\(id)"
-                URLSession.shared.dataTask(with: URL(string: urlString)!, completionHandler: { (data, response, error) in
+                guard let url = URL(string: urlString) else { return }
+                URLSession.shared.dataTask(with: url, completionHandler: { (data, response, error) in
                     if error != nil {
                         print(error!)
                     }
+                    guard let data = data else { return  }
                     do {
-                        let json = try JSONSerialization.jsonObject(with: data!, options: .mutableContainers)
+                        let decoder = JSONDecoder()
+                        let app = try decoder.decode(App.self, from: data)
+                        self.app = app
                         
-                        let appDetail = App()
-                        appDetail.setValuesForKeys(json as! [String: AnyObject])
-                        // using new properties with appDetail, to set the app to be the appDetail for more properties at urlString
-                        self.app = appDetail
-                        // till hasn't to pass into main every time to reloaad data
                         DispatchQueue.main.async {
                             self.collectionView?.reloadData()
                         }
@@ -55,12 +54,12 @@ class AppDetailController: UICollectionViewController, UICollectionViewDelegateF
         collectionView?.backgroundColor = .white
         collectionView?.alwaysBounceVertical = true
         
-        collectionView?.register(HeaderDetailCell.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerID)
+        collectionView?.register(HeaderDetailCell.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: headerID)
         collectionView?.register(InfoDetailsController.self, forCellWithReuseIdentifier: cellId)
         collectionView?.register(DescriptionCell.self, forCellWithReuseIdentifier: descriptionCellId)
         collectionView?.register(InformationCell.self, forCellWithReuseIdentifier: infoId)
         
-        appInfos = app?.appsInformation
+        appInfos = app?.appInformation
         
     }
     override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
@@ -94,16 +93,16 @@ class AppDetailController: UICollectionViewController, UICollectionViewDelegateF
         return 0
     }
     private func descriptionAttributedTextFragment()-> NSAttributedString {
-        let attributedText = NSMutableAttributedString(string: "Description\n", attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 16)])
+        let attributedText = NSMutableAttributedString(string: "Description\n", attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16)])
         
         let style = NSMutableParagraphStyle()
         style.lineSpacing = 8
         
-        let range = NSMakeRange(0, attributedText.string.characters.count)
-        attributedText.addAttribute(NSParagraphStyleAttributeName, value: style, range: range)
+        let range = NSMakeRange(0, attributedText.string.count)
+        attributedText.addAttribute(NSAttributedString.Key.paragraphStyle, value: style, range: range)
         
-        if let desc = app?.desc {
-            attributedText.append(NSAttributedString(string: desc, attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 12) ,NSForegroundColorAttributeName: UIColor.darkGray]))
+        if let desc = app?.description {
+            attributedText.append(NSAttributedString(string: desc, attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 12) ,NSAttributedString.Key.foregroundColor: UIColor.darkGray]))
         }
         return attributedText
     }
@@ -115,14 +114,7 @@ class AppDetailController: UICollectionViewController, UICollectionViewDelegateF
             return CGSize(width: view.frame.width, height: estimatedHeight.height + 32)
         }
         if indexPath.item == 2 {
-            /*
-             if let itemSize = appInfos?[indexPath.item].value {
-             let size = CGSize(width: view.frame.width, height: 1000)
-             let estimatedSize = NSString(string: itemSize).boundingRect(with: size, options: .usesLineFragmentOrigin, attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 12)], context: nil)
-             //   let completedSize: CGFloat = 12 + 20 + 4 + 168
-             return CGSize(width: view.frame.width, height: estimatedSize.height)
-             //return CGSize(width: view.frame.width, height: 178)
-             }*/
+            
             return CGSize(width: view.frame.width, height: 178)
         }
         return CGSize(width: view.frame.width, height: 280)
@@ -165,14 +157,14 @@ class DescriptionCell: BaseCell {
 class HeaderDetailCell: BaseCell {
     var app: App? {
         didSet {
-            if let image = app?.imageName {
+            if let image = app?.ImageName {
                 imageView.image = UIImage(named: image)
             }
-            if let name = app?.name {
+            if let name = app?.Name {
                 textView.text = name
             }
             
-            if let price = app?.price {
+            if let price = app?.Price {
                 getButton.setTitle("$\(price)", for: .normal)
             }
         }
@@ -185,12 +177,6 @@ class HeaderDetailCell: BaseCell {
         return iv
     }()
     
-    /* let nameLabel: UILabel = {
-     let label = UILabel()
-     label.text = "test test"
-     label.font = UIFont.systemFont(ofSize: 16)
-     return label
-     }()*/
     let textView: UITextView = {
         let textView = UITextView()
         textView.font = UIFont.systemFont(ofSize: 16)
@@ -253,33 +239,31 @@ class InformationCell: BaseCell, UICollectionViewDelegate, UICollectionViewDeleg
         }
     }
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if let count = app_Info?.appsInformation?.count {
+        if let count = app_Info?.appInformation?.count {
             return count
         }
         return 0
     }
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: info_cell, for: indexPath) as! InfoDataCell
-        cell.appInfo = app_Info?.appsInformation?[indexPath.item]
+        cell.appInfo = app_Info?.appInformation?[indexPath.item]
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
     }
-    /* func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-     return 0
-     }*/
+    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return 0
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        guard let item = app_Info?.appsInformation?[indexPath.item].value else {
+        guard let item = app_Info?.appInformation?[indexPath.item].Value else {
             return .zero
         }
         let size = CGSize(width: frame.width - 94 - 14, height: 1000)
-        let estimatedSize = NSString(string: item).boundingRect(with: size, options: .usesLineFragmentOrigin, attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: 12)], context: nil)
+        let estimatedSize = NSString(string: item).boundingRect(with: size, options: .usesLineFragmentOrigin, attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 12)], context: nil)
         return CGSize(width: frame.width, height: estimatedSize.height)
     }
     
@@ -317,23 +301,14 @@ class InformationCell: BaseCell, UICollectionViewDelegate, UICollectionViewDeleg
         addConstraintsWithFormat(format: "H:|-14-[v0]|", views: dividedLine)
         
         addConstraintsWithFormat(format: "H:|[v0]|", views: collectionView)
-        /*
-         // top layout of sharing
-         addConstraint(NSLayoutConstraint(item: sharingdValue, attribute: .top, relatedBy: .equal, toItem: ratingValue, attribute: .bottom, multiplier: 1, constant: 8))
-         // left
-         addConstraint(NSLayoutConstraint(item: sharingdValue, attribute: .left, relatedBy: .equal, toItem: sellerLabel, attribute: .right, multiplier: 1, constant: 46))
-         
-         // height
-         addConstraint(NSLayoutConstraint(item: sharingdValue, attribute: .height, relatedBy: .equal, toItem: self, attribute: .height, multiplier: 0, constant: 20))
-         */
-        //addConstraintsWithFormat(format: "V:-8-[v0]-8-", views: sellerName)
         
     }
+    
     class InfoDataCell: BaseCell {
         var appInfo: AppInformation? {
             didSet {
-                nameLabel.text = appInfo?.name
-                valueLabel.text = appInfo?.value
+                nameLabel.text = appInfo?.Name
+                valueLabel.text = appInfo?.Value
             }
         }
         let nameLabel: UILabel = {
@@ -372,7 +347,7 @@ extension UIView {
             viewsDictionary[key] = view
             view.translatesAutoresizingMaskIntoConstraints = false
         }
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: format, options: NSLayoutFormatOptions(), metrics: nil, views: viewsDictionary))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: format, options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: viewsDictionary))
     }
     
 }

@@ -19,27 +19,30 @@ class InfoDetailsController: BaseCell, UICollectionViewDataSource, UICollectionV
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if let count = app?.screenshots?.count {
+        if let count = app?.Screenshots?.count {
             return count
         }
         return 0
-        // return 5
     }
+    
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell =  collectionView.dequeueReusableCell(withReuseIdentifier: cellID, for: indexPath) as! InfoDetailsCell
-        if let image = app?.screenshots?[indexPath.item] {
+        if let image = app?.Screenshots?[indexPath.item] {
             cell.imageView.image = UIImage(named: image)
         }
         // can't use this, coz if nil will crash
         // cell.imageView.image = UIImage(named: (app?.screenshots?[indexPath.item])!)
         return cell
     }
+    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: frame.width - 80, height: frame.height - 66)
     }
+    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
     }
+    
     let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
@@ -64,7 +67,7 @@ class InfoDetailsController: BaseCell, UICollectionViewDataSource, UICollectionV
         super.setupViews()
         collectionView.dataSource = self
         collectionView.delegate = self
-        //     backgroundColor = .red
+        
         collectionView.register(InfoDetailsCell.self, forCellWithReuseIdentifier: cellID)
         
         addSubview(nameLabel)
@@ -81,8 +84,6 @@ class InfoDetailsController: BaseCell, UICollectionViewDataSource, UICollectionV
         
         let imageView : UIImageView = {
             let iv = UIImageView()
-            //     iv.contentMode = .scaleAspectFill
-            //            iv.layer.masksToBounds = true
             iv.contentMode = .scaleToFill
             iv.backgroundColor = .green
             return iv

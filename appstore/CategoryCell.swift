@@ -21,34 +21,28 @@ class CategoryCell: UICollectionViewCell, UICollectionViewDelegate,UICollectionV
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
     var appStoreController: AppStoreViewController?
     
     var appCategory: CategoryModels? {
         didSet {
-            if let name = appCategory?.name{
+            if let name = appCategory?.name {
                 nameLabel.text = name
             }
-            // to reloade all data, Particularly for header to put data into appsCollectionView to be filled by image, coz you deleted super.setupViews that deleted (appsCollectionView, diviedLine, nameLabel)
-            appsCollectionView.reloadData()
-            addSubview(nameLabel)
             
+            // to reloade all data, Particularly for header to put data into appsCollectionView to be filled by image, coz you deleted super.setupViews that deleted (appsCollectionView, diviedLine, nameLabel)
+           
+                self.appsCollectionView.reloadData()
         }
-        
     }
     
-    // to build it as Struct
-    /*
-     var appCategory: CollectionApp? {
-     didSet {
-     nameLabel.text = appCategory?.name
-     }
-     }
-     */
-    let appsCollectionView: UICollectionView = {
+    lazy var appsCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .clear
+        collectionView.dataSource = self
+        collectionView.delegate = self
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         return collectionView
     }()
@@ -62,7 +56,6 @@ class CategoryCell: UICollectionViewCell, UICollectionViewDelegate,UICollectionV
     
     let nameLabel: UILabel = {
         let label = UILabel()
-        //        label.text = "Best New Apps"
         label.textColor = .black
         label.font = UIFont.boldSystemFont(ofSize: 18)
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -71,18 +64,16 @@ class CategoryCell: UICollectionViewCell, UICollectionViewDelegate,UICollectionV
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         
-        if let count = appCategory?.appss?.count {
+        if let count = appCategory?.apps?.count {
             return count
         } else {
             return 0
         }
-        // return (appCategory?.apps.count)!
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellID, for: indexPath) as! AppCell
-        //cell.app = appCategory?.apps[indexPath.item]
-        cell.app = appCategory?.appss?[indexPath.row]
+        cell.app = appCategory?.apps?[indexPath.row]
         return cell
     }
     
@@ -95,61 +86,36 @@ class CategoryCell: UICollectionViewCell, UICollectionViewDelegate,UICollectionV
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if let app = appCategory?.appss?[indexPath.item] {
+        if let app = appCategory?.apps?[indexPath.item] {
             
             appStoreController?.showDetailedApps(app: app)
         }
     }
     
     func setupViews() {
-        appsCollectionView.dataSource = self
-        appsCollectionView.delegate = self
         
         addSubview(appsCollectionView)
         addSubview(dividedLine)
         addSubview(nameLabel)
         
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|-8-[v0]|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0": nameLabel]))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|-8-[v0]|", options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: ["v0": nameLabel]))
         
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|-8-[v0]-8-|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0": dividedLine]))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|-8-[v0]-8-|", options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: ["v0": dividedLine]))
         
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[v0]|", options: NSLayoutFormatOptions(), metrics: nil, views: ["v0": appsCollectionView]))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[labelName(30)][v0][v1(0.5)]|", options: NSLayoutFormatOptions(), metrics: nil, views: ["labelName": nameLabel, "v0": appsCollectionView,"v1": dividedLine]))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[v0]|", options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: ["v0": appsCollectionView]))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[labelName(30)][v0][v1(0.5)]|", options: NSLayoutConstraint.FormatOptions(), metrics: nil, views: ["labelName": nameLabel, "v0": appsCollectionView,"v1": dividedLine]))
     }
 }
 
 
 class AppCell: UICollectionViewCell {
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupViews()
-    }
-    
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    // to build it as Struct
-    /*
-     var app: App? {
-     didSet {
-     nameLabel.text = app?.name
-     categoryLabel.text = app?.category
-     imageView.image = app?.imageName
-     if let price = app?.price {
-     priceLabel.text = "$\(price)"
-     } else {
-     priceLabel.text = ""
-     }
-     }
-     }
-     */
-    
+  
     var app: App? {
         didSet {
-            if let name = app?.name {
+            if let name = app?.Name {
                 nameLabel.text = name
                 let size = CGSize(width: frame.width, height: 1000)
-                let attributes = [NSFontAttributeName: UIFont.systemFont(ofSize: 14)]
+                let attributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14)]
                 let rect = NSString(string: name).boundingRect(with: size, options: .usesLineFragmentOrigin, attributes: attributes, context: nil)
                 if rect.height > 20 {
                     categoryLabel.frame = CGRect(x: 0, y: frame.width + 38, width: frame.width, height: 20)
@@ -163,17 +129,18 @@ class AppCell: UICollectionViewCell {
                 nameLabel.sizeToFit()
                 
             }
-            if let category = app?.category{
+            if let category = app?.Category{
                 categoryLabel.text = category
             }
-            if let price = app?.price {
+            if let price = app?.Price {
                 priceLabel.text = "$\(price)"
             } else {
                 priceLabel.text = ""
             }
-            if let image = app?.imageName {
+            if let image = app?.ImageName {
                 imageView.image = UIImage(named: image)
             }
+            
         }
     }
     
@@ -218,6 +185,15 @@ class AppCell: UICollectionViewCell {
         nameLabel.frame = CGRect(x: 0, y: frame.width + 2, width: frame.width, height: 40)
         categoryLabel.frame = CGRect(x: 0, y: frame.width + 38, width: frame.width, height: 20)
         priceLabel.frame = CGRect(x: 0, y: frame.width + 56, width: frame.width, height: 20)
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 }
 
