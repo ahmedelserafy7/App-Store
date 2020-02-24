@@ -132,7 +132,7 @@ class AppCell: UICollectionViewCell {
             if let category = app?.Category{
                 categoryLabel.text = category
             }
-            if let price = app?.Price {
+            if let price = app?.Price as NSNumber? {
                 priceLabel.text = "$\(price)"
             } else {
                 priceLabel.text = ""
@@ -146,7 +146,6 @@ class AppCell: UICollectionViewCell {
     
     let imageView : UIImageView = {
         let imageView = UIImageView()
-        //        imageView.image = #imageLiteral(resourceName: "angrybirdsspace")
         imageView.contentMode = .scaleAspectFill
         imageView.layer.cornerRadius = 15
         imageView.clipsToBounds = true

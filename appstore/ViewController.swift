@@ -113,7 +113,6 @@ class AppStoreViewController: UICollectionViewController, UICollectionViewDelega
 class Header: CategoryCell {
     
     var leftAnchorImageView: NSLayoutConstraint?
-    var scrollingTimer = Timer()
     override func setupViews() {
         // comment super.setupViews(): to remove nameLabel, dividedLine
         //        super.setupViews()
