@@ -12,9 +12,9 @@ This project is a mocking app like **AppStore**.
 
  1. Creating Horizontal CollectionView Scroll Direction.
 
- 2. Fetching REST JSON API by Decodable.
+ 2. Fetching **REST** JSON API by **Decodable**.
 
- 3. Animating Banner Category Image.
+ 3. Animating Banner Category Images.
  
 ## Requirements
 
