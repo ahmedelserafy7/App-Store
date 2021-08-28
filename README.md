@@ -1,12 +1,11 @@
 # App-Store
 
+## Description
+
+**App Store** is an app imitates App Store.
 
 <img src="https://imgur.com/6ZsGy9D.png" ><img src="https://imgur.com/47Aoeji.png">
 <img src="https://imgur.com/QLSRh4r.png"> <img src="https://imgur.com/7IXgeZI.png">
-
-## Description
-
-This project is a mocking app like **AppStore**.
 
 ## Used Skills
 
